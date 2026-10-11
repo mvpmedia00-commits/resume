@@ -407,3 +407,5 @@ footer a:hover{color:var(--red)}
   .hero-drawing .draw{stroke-dashoffset:0}
   .ticker-track{animation:none}
 }
+.tools{font:400 13px/1.7 var(--mono);color:#cfd9e3!important;margin-top:24px}
+.tools span{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#ff8a63;margin-bottom:6px}

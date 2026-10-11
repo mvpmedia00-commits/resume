@@ -8,4 +8,4 @@ Static portfolio site with a drafting-table look: vellum paper, blueprint grids,
 
 Preview it by opening `index.html`. To publish, upload the folder to any static host (GitHub Pages, Netlify, Cloudflare Pages).
 
-Before publishing, check the archived resume PDFs: some may still list an earlier graduation date and Creo references.
+Site copy follows the October 2026 master applicant profile. Personal project sites, repositories and domains are intentionally never named or linked here.
