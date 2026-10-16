@@ -2,11 +2,13 @@
 
 3D open-world RPG (Three.js r128) in a fictional, after-hours Las Vegas. You play Matthew "MVP" Phillips, a photographer building MVP Media from room 12 at the Desert Rose Motel into the biggest studio in town.
 
-Open `index.html` in Chrome (WebGL required; Three.js loads from cdnjs). One file, no install. Progress saves in the browser.
+Open `index.html` in Chrome or iPhone Safari (WebGL required; Three.js loads from cdnjs and its post-processing passes from jsDelivr). One file, no install. Progress saves in the browser.
 
 **Rating intent:** mature themes (nightlife, clubs, adult-film production as a business) with no explicit content. Productions cut to "That's a wrap." Every talent character is a named adult professional under a paid contract.
 
 ## What's in it
+- 2026 render pipeline: HDR bloom on neon, filmic tone mapping and grade, image-based reflections, wet streets, clearcoat car paint (Settings > Graphics switches to a fast mode)
+- Detailed hero models of MVP (braids, beard, beret, red suit with MVP buckle, DSLR) and Ruby (curly red afro, beret, hoops, MVP bandeau, tulle tutu, tattoos, red-sole heels), posed on a 3D MVP Studios set on the title screen
 - Jointed 3D characters built in code: MVP (red suit, beret, camera), the talent, story contacts and pedestrians, with walk cycles and 7 photo poses
 - Third-person camera on foot (mouse look) and a chase camera in the car
 - Drivable 3D city (lit windows, neon trim, Crown Casino searchlights): traffic AI that follows lanes and turns at intersections, pedestrians who dodge, a desert road out to Red Rock Overlook, a minimap and an edge arrow pointing to your objective
