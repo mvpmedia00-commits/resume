@@ -1,4 +1,6 @@
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>MVP: Beyond the Frame</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -70,11 +72,46 @@ h3 { margin: 4px 0 0; font-size: 11px; letter-spacing: .24em; text-transform: up
 .toast b { color: var(--gold); margin-right: 6px; }
 @keyframes tin { from { opacity: 0; transform: translateY(10px); } }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+/* Touch remote (iPhone): thumb joystick left, action buttons right */
+#c, #remote { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#remote { position: fixed; inset: 0; pointer-events: none; }
+#remote .rb { pointer-events: auto; position: absolute; touch-action: none; border-radius: 50%; display: grid; place-items: center; padding: 0;
+  font: 700 11px/1 var(--body); letter-spacing: .14em; color: var(--bone); background: rgba(16,6,8,.5); border: 1.5px solid rgba(255,59,72,.65);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); -webkit-tap-highlight-color: transparent; }
+#remote .rb.on { background: rgba(224,32,46,.7); border-color: var(--red-hot); }
+#remote .rb.ready { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(232,182,76,.25); }
+#remote .rb.dim { opacity: .35; }
+#remote .act { width: 84px; height: 84px; font-size: 13px; right: calc(22px + env(safe-area-inset-right, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
+#remote .car { width: 60px; height: 60px; right: calc(116px + env(safe-area-inset-right, 0px)); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+#remote .brake { width: 60px; height: 60px; right: calc(30px + env(safe-area-inset-right, 0px)); bottom: calc(122px + env(safe-area-inset-bottom, 0px)); }
+#remote .pause { width: 44px; height: 44px; border-radius: 10px; font-size: 14px; letter-spacing: 0; left: calc(12px + env(safe-area-inset-left, 0px)); top: calc(96px + env(safe-area-inset-top, 0px)); }
+#remote .shutter { width: 88px; height: 88px; right: calc(22px + env(safe-area-inset-right, 0px)); top: 50%; margin-top: -44px; background: rgba(243,233,228,.85); color: #120607; border: 5px solid rgba(255,255,255,.4); background-clip: padding-box; }
+#remote .shutter.on { background: #fff; }
+#remote .zin, #remote .zout { width: 52px; height: 52px; font-size: 22px; letter-spacing: 0; right: calc(122px + env(safe-area-inset-right, 0px)); }
+#remote .zin { top: calc(50% - 58px); } #remote .zout { top: calc(50% + 6px); }
+@media (pointer: coarse) { #toasts { bottom: auto; top: calc(62px + env(safe-area-inset-top, 0px)); } }
+#remote[data-mode="world"] .s-only, #remote[data-mode="shoot"] .w-only { display: none; }
+#stick { position: absolute; width: 124px; height: 124px; margin: -62px 0 0 -62px; border-radius: 50%; border: 2px solid rgba(243,233,228,.3); background: rgba(16,6,8,.3); opacity: .55; transition: opacity .15s; }
+#stick.on { opacity: 1; transition: none; }
+#knob { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: rgba(224,32,46,.8); box-shadow: 0 0 18px rgba(224,32,46,.5); }
+#rotate { position: fixed; left: 0; right: 0; bottom: calc(160px + env(safe-area-inset-bottom, 0px)); text-align: center; font: 600 13px var(--body); color: var(--bone-dim); pointer-events: none; padding-inline: 16px; }
+@media (orientation: landscape) { #rotate { display: none; } }
 </style>
 
 <canvas id="c" aria-label="MVP: Beyond the Frame game view"></canvas>
 <canvas id="hud" aria-hidden="true"></canvas>
 <div id="toasts"></div>
+<div id="remote" hidden data-mode="world">
+  <div id="stick" class="w-only"><div id="knob"></div></div>
+  <button class="rb pause" data-k="pause" aria-label="Pause">II</button>
+  <button class="rb act w-only" data-k="act" aria-label="Interact">ACT</button>
+  <button class="rb car w-only" data-k="car" aria-label="Get in or out of the car">CAR</button>
+  <button class="rb brake w-only" data-k="brake" aria-label="Brake">BRAKE</button>
+  <button class="rb shutter s-only" data-k="shutter" aria-label="Take the photo">SHOOT</button>
+  <button class="rb zin s-only" data-k="zin" aria-label="Zoom in">+</button>
+  <button class="rb zout s-only" data-k="zout" aria-label="Zoom out">−</button>
+  <div id="rotate">Turn your phone sideways for the best view</div>
+</div>
 <div id="scrim" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -767,8 +804,65 @@ addEventListener('mousemove', e => {
 cv.addEventListener('mousedown', e => { initAudio(); mouse.down = true; mouse.clicked = true; mouse.x = e.clientX; mouse.y = e.clientY; if (S.mode === 'play' && !locked) { mouse.drag = true; requestLock(); } });
 addEventListener('mouseup', () => { mouse.down = false; mouse.drag = false; });
 cv.addEventListener('wheel', e => { if (S.mode === 'shoot' && shoot) { e.preventDefault(); shoot.fov = clamp(shoot.fov + e.deltaY * 0.02, 16, 48); } }, { passive: false });
-cv.addEventListener('touchstart', e => { initAudio(); const t = e.touches[0]; mouse.x = t.clientX; mouse.y = t.clientY; mouse.clicked = true; }, { passive: true });
-cv.addEventListener('touchmove', e => { const t = e.touches[0]; mouse.x = t.clientX; mouse.y = t.clientY; }, { passive: true });
+// ---- touch remote (iPhone / iPad): left thumb = joystick, right thumb = look / aim, buttons for the rest
+let TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+const stick = { f: 0, r: 0, id: null, ox: 0, oy: 0 }, look = { id: null, x: 0, y: 0 };
+const remote = $('#remote'), stickEl = $('#stick'), knobEl = $('#knob');
+function stickHome() { stickEl.style.left = (90 + 0) + 'px'; stickEl.style.top = (H - 110) + 'px'; knobEl.style.transform = ''; stickEl.classList.remove('on'); }
+cv.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse') return;
+  e.preventDefault(); TOUCH = true; initAudio();
+  if (S.mode === 'play' && stick.id === null && e.clientX < W * 0.45) {
+    stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY;
+    stickEl.style.left = e.clientX + 'px'; stickEl.style.top = e.clientY + 'px'; stickEl.classList.add('on');
+  } else if (look.id === null) { look.id = e.pointerId; look.x = e.clientX; look.y = e.clientY; }
+  try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+}, { passive: false });
+cv.addEventListener('pointermove', e => {
+  if (e.pointerType === 'mouse') return;
+  if (e.pointerId === stick.id) {
+    let dx = e.clientX - stick.ox, dy = e.clientY - stick.oy; const l = Math.hypot(dx, dy), R = 52;
+    if (l > R) { dx *= R / l; dy *= R / l; }
+    stick.r = dx / R; stick.f = -dy / R; knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
+  } else if (e.pointerId === look.id) {
+    const dx = e.clientX - look.x, dy = e.clientY - look.y; look.x = e.clientX; look.y = e.clientY;
+    if (S.mode === 'play') { camS.yaw += dx * 0.0065; camS.pitch = clamp(camS.pitch + dy * 0.004, -0.05, 1.0); camS.lastMouse = S.t; }
+    else if (S.mode === 'shoot') { mouse.x = clamp(mouse.x + dx * 1.1, 0, W); mouse.y = clamp(mouse.y + dy * 1.1, 0, H); }
+  }
+});
+function touchEnd(e) {
+  if (e.pointerId === stick.id) { stick.id = null; stick.f = stick.r = 0; stickHome(); }
+  if (e.pointerId === look.id) look.id = null;
+}
+cv.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') { initAudio(); touchEnd(e); } });
+cv.addEventListener('pointercancel', touchEnd);
+const HOLD_KEYS = { brake: 'Space', zin: 'KeyE', zout: 'KeyQ' };
+remote.addEventListener('pointerdown', e => {
+  const b = e.target.closest('[data-k]'); if (!b) return;
+  e.preventDefault(); initAudio(); b.classList.add('on'); try { b.setPointerCapture(e.pointerId); } catch (err) {}
+  const k = b.dataset.k;
+  if (HOLD_KEYS[k]) keys.add(HOLD_KEYS[k]);
+  else if (k === 'act') pressed.add('KeyE');
+  else if (k === 'car') pressed.add('KeyF');
+  else if (k === 'shutter') mouse.clicked = true;
+  else if (k === 'pause' && S.mode === 'play') { pausedAt = performance.now(); openPause(); }
+}, { passive: false });
+function remoteUp(e) { const b = e.target.closest && e.target.closest('[data-k]'); if (!b) return; b.classList.remove('on'); if (HOLD_KEYS[b.dataset.k]) keys.delete(HOLD_KEYS[b.dataset.k]); }
+remote.addEventListener('pointerup', remoteUp); remote.addEventListener('pointercancel', remoteUp);
+remote.addEventListener('contextmenu', e => e.preventDefault());
+let lastRemoteMode = '';
+function updRemote() {
+  const show = TOUCH && (S.mode === 'play' || S.mode === 'shoot');
+  if (remote.hidden === show) remote.hidden = !show;
+  if (!show) { if (stick.id !== null || look.id !== null) { stick.id = look.id = null; stick.f = stick.r = 0; } return; }
+  const mode = S.mode === 'shoot' ? 'shoot' : 'world';
+  if (mode !== lastRemoteMode) { remote.dataset.mode = mode; lastRemoteMode = mode; stickHome(); }
+  if (mode === 'world') {
+    remote.querySelector('.act').classList.toggle('ready', !!S.prompt && !S.prompt.startsWith('F ·'));
+    remote.querySelector('.car').classList.toggle('dim', !P.inCar && Math.hypot(P.x - myCar.x, P.y - myCar.y) > 80);
+    remote.querySelector('.brake').classList.toggle('dim', !P.inCar);
+  }
+}
 document.addEventListener('visibilitychange', () => { if (document.hidden) { persist(); if (S.mode === 'play') openPause(); } });
 
 
@@ -807,7 +901,7 @@ function carHitsWall(c, x, y) {
   return false;
 }
 function driveCar(dt) {
-  const c = P.inCar, up = keys.has('KeyW') || keys.has('ArrowUp'), dn = keys.has('KeyS') || keys.has('ArrowDown');
+  const c = P.inCar, up = keys.has('KeyW') || keys.has('ArrowUp') || stick.f > 0.25, dn = keys.has('KeyS') || keys.has('ArrowDown') || stick.f < -0.35;
   const lt = keys.has('KeyA') || keys.has('ArrowLeft'), rt = keys.has('KeyD') || keys.has('ArrowRight');
   const sand = tileAtPx(c.x, c.y) === T.SAND;
   const maxV = (420 + 55 * save.gear.ride) * (sand ? 0.55 : 1);
@@ -817,7 +911,7 @@ function driveCar(dt) {
   if (keys.has('Space')) c.v -= Math.sign(c.v) * Math.min(Math.abs(c.v), 900 * dt);
   if (c.v > maxV) c.v = lerp(c.v, maxV, dt * 3);
   c.v = Math.max(c.v, -170);
-  const steer = (rt ? 1 : 0) - (lt ? 1 : 0);
+  const steer = clamp((rt ? 1 : 0) - (lt ? 1 : 0) + stick.r, -1, 1);
   c.a += steer * (keys.has('Space') ? 3.4 : 2.5) * dt * clamp(c.v / 160, -1, 1);
   const nx = c.x + Math.cos(c.a) * c.v * dt, ny = c.y + Math.sin(c.a) * c.v * dt;
   if (!carHitsWall(c, nx, ny)) { c.x = nx; c.y = ny; }
@@ -839,7 +933,8 @@ function walk(dt) {
   let f = 0, r = 0;
   if (keys.has('KeyW') || keys.has('ArrowUp')) f += 1; if (keys.has('KeyS') || keys.has('ArrowDown')) f -= 1;
   if (keys.has('KeyD') || keys.has('ArrowRight')) r += 1; if (keys.has('KeyA') || keys.has('ArrowLeft')) r -= 1;
-  const run = keys.has('ShiftLeft') || keys.has('ShiftRight'), sp = run ? 130 : 72, y = camS.yaw;
+  f += stick.f; r += stick.r;
+  const run = keys.has('ShiftLeft') || keys.has('ShiftRight') || Math.hypot(stick.f, stick.r) > 0.92, sp = run ? 130 : 72, y = camS.yaw;
   let ix = Math.cos(y) * f + Math.cos(y + Math.PI / 2) * r, iy = Math.sin(y) * f + Math.sin(y + Math.PI / 2) * r;
   const l = Math.hypot(ix, iy);
   P.moveAmt = lerp(P.moveAmt || 0, l ? (run ? 1 : 0.65) : 0, Math.min(1, dt * 10));
@@ -1059,7 +1154,7 @@ function drawHud() {
   }
   if (P.inCar) { ctx.textAlign = 'right'; ctx.font = '44px Anton, Impact, sans-serif'; ctx.fillStyle = '#f3e9e4'; ctx.fillText(Math.round(Math.abs(P.inCar.v) * K * 2.237), W - pad - 6, H - pad - 16); ctx.font = '600 11px Montserrat, sans-serif'; ctx.fillStyle = '#b8a3a0'; ctx.fillText('MPH', W - pad - 6, H - pad); }
   // minimap (north up)
-  const ms = Math.min(180, W * 0.3), mx = W - ms - pad, my = pad, me = P.inCar || P;
+  const ms = Math.min(180, W * 0.3, H * 0.32), mx = W - ms - pad, my = pad, me = P.inCar || P;
   ctx.save(); ctx.beginPath(); ctx.rect(mx, my, ms, ms); ctx.clip(); ctx.fillStyle = '#000'; ctx.fillRect(mx, my, ms, ms);
   const span = 70, scale = ms / span, cx = me.x / TS, cy = me.y / TS;
   ctx.imageSmoothingEnabled = false; ctx.drawImage(mm, (cx - span / 2) * 2, (cy - span / 2) * 2, span * 2, span * 2, mx, my, ms, ms);
@@ -1085,7 +1180,7 @@ function drawHud() {
     ctx.fillText(Math.round(dm) + ' m to objective', mx + ms, my + ms + 30);
   }
   if (S.t < 30) { ctx.textAlign = 'left'; ctx.font = '500 12px Montserrat, sans-serif'; ctx.fillStyle = 'rgba(243,233,228,.75)';
-    ctx.fillText('WASD move · Mouse look (click to lock) · F car · E interact · Space brake · Shift run · Esc pause', pad, H - pad); }
+    if (!TOUCH) ctx.fillText('WASD move · Mouse look (click to lock) · F car · E interact · Space brake · Shift run · Esc pause', pad, H - pad); }
 }
 
 // ------------------------------------------------------------ PHOTO SHOOT (3D sets, first-person camera)
@@ -1322,13 +1417,17 @@ function openTitle() {
     <div class="btns">${save.started ? `<button class="btn primary" data-act="cont">Continue <small>${fmt(save.cash)} · Day ${save.day}</small></button>` : ''}
     <button class="btn ${save.started ? '' : 'primary'}" data-act="newgame">New game <small>${save.started ? 'Erases your save' : ''}</small></button>
     <button class="btn" data-act="controls">Controls</button></div>
-    <p class="muted" style="text-align:center">Mature themes, non-explicit. All characters are adults. Keyboard + mouse, Chrome with WebGL.</p></div>`, false);
+    <p class="muted" style="text-align:center">Mature themes, non-explicit. All characters are adults. Keyboard + mouse or iPhone touch, with WebGL.</p></div>`, false);
 }
 function openControls() {
   const back = S.mode === 'title' ? 'title' : 'pause';
   showPanel(`<div class="card"><div class="eyebrow">How to play</div><h2>Controls</h2>
     <div class="keys"><kbd>Mouse</kbd><span>Look around (click the game to lock the cursor)</span><kbd>W A S D</kbd><span>Walk, or drive (W gas, S brake/reverse)</span><kbd>Shift</kbd><span>Run on foot</span><kbd>Space</kbd><span>Handbrake</span>
     <kbd>F</kbd><span>Get in or out of your car</span><kbd>E</kbd><span>Talk, start missions, shops, studio</span><kbd>Esc</kbd><span>Pause</span></div>
+    <h3>iPhone / touch</h3>
+    <div class="keys"><kbd>Left thumb</kbd><span>Joystick: walk, push all the way to run; in the car, gas, reverse and steering</span><kbd>Right thumb</kbd><span>Drag to look around</span>
+    <kbd>ACT</kbd><span>Talk, start missions, shops, studio (glows gold when something is nearby)</span><kbd>CAR</kbd><span>Get in or out</span><kbd>BRAKE</kbd><span>Handbrake</span>
+    <kbd>Shoots</kbd><span>Drag to aim, + / − to zoom, SHOOT to take the photo</span></div>
     <h3>Photo shoots</h3>
     <div class="keys"><kbd>Mouse</kbd><span>Aim the camera (or WASD)</span><kbd>Wheel</kbd><span>Zoom the lens (or Q / E)</span><kbd>Click</kbd><span>Take the shot (or Space)</span></div>
     <p class="muted">Put the model's face on a red thirds point, zoom so she fills the frame, wait for the sparkle when she holds the pose, and fire while the focus needle is in the green.</p>
@@ -1489,6 +1588,7 @@ function frame(now) {
     }
     sync3D(dt); renderer.render(world, cam); drawHud();
   }
+  updRemote();
   pressed.clear(); mouse.clicked = false;
 }
 function boot() {
